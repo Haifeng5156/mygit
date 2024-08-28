@@ -1,0 +1,505 @@
+select   version();    //产看服务软件版本
+select   user();          //查看登陆用户
+select   database();  //查看当前所在库
+show   databases;   //查看已有的库
+use       库名;           //切换库
+show   tables;         查看已有的表
+
+
+
+=============================================================
+
+查看连接MySQL服务初始密码
+grep password  /var/log/mysqld.log | tail -1
+使用密码连接服务
+mysql   -uroot      -p'p.7jr.uy.aiZ'
+修改登录密码（服务强制修改且修改的密码要符合服务要求的复杂度）
+alter user   root@"localhost" identified by "123qqq...A";
+
+vim /etc/my.cnf
+[mysqld]
+#validate_password_policy=0
+#validate_password_length=6
+skip-grant-tables  #跳过授权库MySQL库启动服务 作用连接服务不需要输入密码
+:wq
+[root@host50 ~]# systemctl  restart mysqld
+[root@host50 ~]# mysql  不输入密码就可以登陆
+update  mysql.user set authentication_string=password("123qqq...A") 
+where user="root" and host="localhost";  修改管理员root 本机登陆密码为  123qqq...A
+mysql> flush privileges; 确保修改生效
+
+查询命令格式
+
+select  字段名列表  from  库名.表名； #查看表里的所有行
+select  字段名列表  from  库名.表名  where   查询条件 ； #只查看与条件匹配的行
+
+查询命令其他
+select  "张三“ as  名字
+select  5+5  as 总和
+
+
+建库的基本命令   create  database  库名；
+建表命令格式   
+create  table  库名.表名(
+表头名1  数据类型, 
+表头名2  数据类型，
+表头名3  数据类型，
+表头名4  数据类型
+
+
+select count(*) from db1.t3;  查看表的总行数
+
+desc 学生库.学生信息表;查看表结构
+drop database gamedb;  删除库
+
+发现创建的表 ，建的不合理  就是可以修改表：
+            命令格式： alter  table  库名.表名   操作命令；
+			可以做哪些修改呢？（操作命令）
+			添加新表头   add         
+			删除表头   drop          
+			修改表头存储数据的 数据类型  modify 
+			修改表头名  change 
+			修改表名  rename 
+
+删除表格时，可以使用 DROP TABLE 命令。例如，如果要删除名为“user”的表，命令如下：
+
+DROP TABLE user;
+
+日期时间类型  表头存储与日期时间格式的数据
+年        year       YYYY     2021
+日期    date        YYYYMMDD    20211104
+时间    time       HHMMSS         143358        
+
+日期时间（既有日期又有时间）  
+datetime   或  timestamp       YYYYMMDDHHMMSS     20211104143648
+
+
+删除  ： 删除表中行  使用delete 
+				
+仅删除符合条件的行   （删除命令有筛选条件）  delete   from  库.表  where  筛选条件；
+删除表里的所有行（删除命令有筛选条件）       delete   from  库.表；
+truncate table 库名.表名;  自增长列，truncate 后从1开始，delete继续编号。
+
+改 修改记录（修改行中列个的值） update
+格式1
+update   库名.表名  set  字段名=值 ，..... where  筛选条件；  只修改符合条件的字段
+
+增 插入记录（向表里添加新行） insert [ into]
+常用格式1：给所有表头赋值 值必须与表头的数据类型匹配
+insert  into 库名.表名  values (表头值列表)；一次添加一行
+insert into  库名.表名  values (表头值列表),(表头值列表)........；一次添加多行
+常用格式2：仅给指定的表头赋值，没有赋值的表头使用默认值或者自增长赋值
+insert into  库名。表名（表头列表）values (表头值列表)；一次添加一行
+insert into  库名。表名（表头列表）values (表头值列表)， (表头值列表)...；一次添加多行
+
+
+查看表使用的字符集
+show create table studb.stuinfo2  \G
+
+#查看默认的检索目录
+ show variables like "%file%";
+show variables like  "secure_file_priv";
+
+
+
+
+
+导入
+数据导入格式：
+mysql>  load   data  infile   "/检索目录/文件名"   into    table    库名.表名   
+ fields  terminated by  "文件中列的间隔符号"   lines   terminated by   "\n"  ;
+
+导出
+数据导出命令格式：
+常用
+  select   字段名列表 from  库.表   where  条件  into  outfile   "/检索命令名/文件名" ;
+-----------------------------------------------------------------------------------------------------------
+添加主键命令格式（要记住）
+alter  table  库.表  add  primary key(表头名);
+create     table   db1.t38 (行号  int   primary key  auto_increment   , 姓名   char(10) , 班级  char(7) , 住址 char(10));
+
+删除主键
+alter table studb.t8 drop primary key;
+
+-----------------------------------------------------------------------------------------------
+
+创建外键命令格式
+create table   库.表(表头列表 , 
+foreign key(表头名)   #指定外键
+references 库.表(表头名)   #指定参考的表头名
+on update  cascade   #同步更新
+on  delete  cascade  #同步删除
+)engine=innodb;  表存储引擎必须是innodb
+删除外键
+alter table 库.表 drop FOREIGN KEY   外键名;
+
+alter table 库.表 add  foreign key(表头名)  references 库.表(表头名)
+on update cascade  on delete cascade;
+例子
+alter table studb.gz_tab add  foreign key(gz_id) references studb.yg_tab(yg_id) on update cascade on delete cascade;
+
+--------------------------------------------------------------------------------------------
+建表时创建索引命令格式
+CREATE TABLE  库.表(
+字段列表 ,
+INDEX(字段名) ,
+INDEX(字段名) ,
+);
+比如：create  table studb.t11(name char(10),class char(7),addr char(20),age int(11),index(name),index(addr));
+
+删除索引  的命令格式   DROP  INDEX   索引名   ON  库.表
+在已有表添加索引命令格式  CREATE  INDEX  索引名  ON  库.表(字段名)；
+
+查看索引名：  show index from studb.t11  \G;
+
+ create table studb.gz_tab(gz_id int ,pay int ,foreign key(gz_id) references studb.yg_tab(yg_id) on update cascade  on delete cascade)engine = innodb;
+
+授权命令格式
+grant  权限列表 on  数据库名 to  用户名@"客户端地址"  identified by "密码"  with grant option;
+
+添加新用户的命令格式
+create user  用户名@"客户端地址"  identified by "密码"；
+
+查看权限
+show grants;
+
+查看已添加的用户
+select  host , user  from  mysql.user;
+
+数据库管理员修改已经添加的用户密码
+set password for  root@"%"=password("NSD2110...a");
+
+
+#只撤销 with grant option的权限。
+        mysql> revoke grant option on  *.* from root@"%";
+
+        #只撤销用户删除记录的权限
+	mysql> revoke delete on  *.* from root@"%";
+
+
+        #查看当前已有的权限
+         mysql> show grants for root@"%";
+
+	#删除用户当前所有的权限
+	mysql> revoke all on  *.* from root@"%";
+
+	#查看当前已有的权限
+         mysql> show grants for root@"%";
+
+删除用户  drop user  用户名@"客户端地址";
+
+在备份文件里查看日志名和偏移量
+grep master51 /root/tow.sql
+
+change master to  master_host="192.168.4.51", master_user="repluser", master_password="123qqq...A",master_log_file="master51.000001", master_log_pos=441;
+
+
+mysql -uroot -p123qqq...A   -e  "show slave status \G " | grep -i  "yes"
+mysql -uroot -p123qqq...A   -e  "show slave status \G " | grep -i  "mastter_host"
+
+例子：
+mysql> create database studb;
+
+mysql> create table studb.user(name char(10),uid int);
+
+mysql> grant select ,update(name,uid) on studb.user to yaya55@"localhost"  identified by "123qqq...A";
+mysql>show  grants for yaya55@"localhost";
+mysql>select * from mysql.tables_priv where user="yaya55";
+mysql> select * from mysql.columns_priv  where user="yaya55";
+
+mysql> show grants  for yaya55@"localhost";
+mysql> select * from mysql.columns_priv  where user="yaya55";
+
+mysql> select * from mysql.tables_priv  where user="yaya55";
+mysql> update mysql.tables_priv set Table_priv = "select,delete"  where User="yaya55";
+让它生效 flush privileges
+mysql> show grants for yaya55@"localhost";
+
+ 会报错 mysql> update mysql.columns_priv set Column_name = "name"  where user="yaya55";
+
+mysql> select * from mysql.columns_priv where user="yaya55";
+delete from mysql.columns_priv  where user= "uid";
+mysql> update mysql.columns_priv set Column_name = "name"  where user="yaya55";
+show grants for yaya55@"localhost";
+
+
+select dept_name, case  when dept_name="运维部" then "技术部门" when dept_name="开发部" then "技术部门" when dept_name="测试部" then "技术部 门" when dept_name  is null then "没设置" else "非技术部"end  as 部门类型 from tarena.departments;
+
+
+select dept_id , count(name) from employees  group by dept_id ;
+解释：把员工ID相同的分为一组，在这些组中统计名字数量
+
+
+存储过程
+delimiter  //
+create procedure tarena.p1()
+begin
+select count(*)  from tarena.user;
+select count(*)  from tarena.employees;
+select count(*)  from tarena.salary ;
+end //
+delimiter ;
+
+执行
+call tarena.p1;
+
+查当前所在库 已有的存储过程
+use tarena
+show procedure status \G
+
+列出服务器上所有的存储过程
+select  db, name ,  type  from mysql.proc 
+where   type="PROCEDURE"  and   name="pria"; 
+
+查看存储过程的功能代码
+select  body  from mysql.proc
+where  name="pria" and type="PROCEDURE"; \G
+
+删除  存储过程
+drop  procedure tarena.p1;
+ 
+局部变量的例子
+
+delimiter //
+create procedure tarena.p2()
+begin
+declare x int default 9;
+declare y char(10);
+set y="bob";
+select x,y;
+set x=89;
+select x;
+end
+//
+delimiter;
+
+call p2;
+
+也可以这样恢复数据库
+mysql> source   /bakdir/user.sql （要进到tarena库再操作）
+
+删除表空间
+ alter  table  tarena.user discard tablespace;
+导入表空间
+alter  table  tarena.user  import  tablespace;
+
+在备份文件里查看日志名和偏移量
+grep master51 /root/tow.sql
+
+
+查看日志文件内容 2 种方法：
+方法1 使用系统命令 mysqlbinlog 查看
+[root@host50 ~]# mysqlbinlog   /mylog/db50.000001   
+						
+方法2 使用sql命令查看
+mysql>  mysql> show binlog events in "db50.000001" ;
+
+show    variables  like    "binlog_format";
+
+安装 sqljoy 工具在数据库支持tab
+
+配ip地址
+echo "IPADDR=192.168.4.53" >> /etc/sysconfig/network/ifcfg-eth0
+ifdown  eth0
+ifup eth0
+
+id mysql || useradd mysql  没有这个用户的时候把这个用户添加上
+
+primary key 
+auto_increment
+
+连接查询 在第六天第二节课(开始复习)
+
+date +%F      年 月 日
+/bakdir/`date +%F`_tarena.sql
+
+pstree -p  | grep mysqld  查找父进程pid 
+kill  -9  805   杀掉父进程pid
+必须要清空  /usr/local/mysql/  目录后重新开启mysql  :systemctl start mysqld 才会初始化密码的
+
+yum list  | grep -i openjdk  在yum原里查找要安装的软件
+
+案例题  
+在tarena库 wage_grade
+查询2018年12月员工各基本工资级别的人数
+select grade as 工资级别,count(employee_id) as 总人数  from salary inner join wage_grade on basic between low and higt where year(date)=2018 and month(date)=12 group by grade;
+
+
+
+
+
+其他阶段笔记烂笔头
+=======================================================================================
+/etc/httpd/conf/httpd.conf  
+DocumentRoot
+
+
+yum  provides    */pxelinux.0   查询哪个包产生改文件
+
+getenforce  查看SELinux运行模式
+
+nmcli connection add type ethernet ifname eth0  con-name eth0   添加网卡
+nmcli connection modify eth0 
+ipv4.method manual ipv4.addresses 192.168.4.108/24 connection.autoconnect yes
+
+yum clean all  清yum缓存
+yum repolist
+
+-eq  是否相等    -ne  是否不等    -gt  是否大于
+-ge   是否大于等于  -lt  是否小于   -le  是否小于等于
+
+setenforce  0       关SELinux
+
+日志 /var/log/httpd/access_log
+
+blkid  /dev/cdrom     #查看 光驱设备文件系统类型
+
+永久开机启动
+]# vim   /etc/fstab  
+/dev/cdrom   /mydvd    iso9660    defaults   0  0
+
+]# umount   /mydvd
+]# mount  -a
+]# ls   /mydvd
+
+]# yum -y install   httpd   #测试安装软件
+
+查软件包名  yum provides  ifconfig
+
+systemctl disable firewalld 开机不启动
+
+ll   -h   /root/   查看root目录里文件的详细信息
+
+
+引导系统生成网卡eth0......
+vim   /etc/default/grub
+net.ifnames=0
+biosdevname=0
+grub2-mkconfig   -o   /boot/grub2/grub.cfg
+
+校验码
+md5sum
+sha512
+
+ansible-doc  firewalld 
+
+安装
+bash-completion. 支持tab
+
+查看错误日志
+vim  /var/log/php-fpm/error.log
+
+开通邮箱服务器
+yum. Install -y postfix mailx
+systemctl enable postfix 
+
+
+yum   remove   gcc 卸载
+
+yum  search  ftp   #包含ftp就匹配
+
+yum  provides  /etc/passwd#仓库中那个软件包产生该文件
+
+vim  /etc/services.  协议和端口的对应关系
+
+scp. -r /usr/local/nginx.  192.168.4.10:/usr/local/   把装好的nginx拷贝给其它机子
+
+route  -n 查网关
+
+ip route show 查网关
+
+查看报错信息
+journalctl  -xe
+
+
+
+nginx
+/usr/local/nginx/logs/error_log 
+/var/log/php-fpm/
+查看错误日志
+
+
+r读取权限：cat、less、grep、head、tail
+       w写入权限：vim、> 、 >>
+       x可执行权限：Shell与Python
+
+
+搭yum 
+[root@nsd ~]# mkdir  -p  /CentOS7/dvd
+[root@nsd ~]# mount   /dev/cdrom    /CentOS7/dvd
+mount: /dev/sr0 写保护，将以只读方式挂载
+[root@nsd ~]# ls    /CentOS7/dvd
+[root@nsd ~]# rm -rf   /etc/yum.repos.d/*
+[root@nsd ~]# vim   /etc/yum.repos.d/dvd.repo
+[dvd]
+name=haha
+baseurl=file:///CentOS7/dvd
+enabled=1
+gpgcheck=0
+
+
+lsblk     #查看挂载信息
+mkfs.ext4   /dev/sdb1  #格式化文件系统ext4
+mkfs.xfs   /dev/sdb2     #格式化文件系统xfs
+blkid    /dev/sdb1    #查看文件系统类型
+
+mount  -o remount,rw  /haifeng. 重新挂载
+
+echo   1    |    passwd   --stdin    root   #改密码
+
+yum  -y install  telnet   
+telnet   192.168.4.11  80  # 查看目标主机80端口是否开放
+
+acl 权限
+setfacl -m u: :  /xx
+查看
+getfacl  -m  /xx
+
+vim   /etc/default/grub      #grub内核引导程序
+……..此处省略一万字
+GRUB_CMDLINE_LINUX="…….. quiet   net.ifnames=0  biosdevname=0"
+……..此处省略一万字                       
+
+]# grub2-mkconfig  -o  /boot/grub2/grub.cfg  #重新生成网卡命名的规则
+
+
+第五阶段
+添加虚拟机脚本
+#!/bin/bash
+cd /var/lib/libvirt/imges/
+qemu -img create -f qcow2 -b cirros.qcow2  vmhost.img 20G
+sed -e "s,node_base,vmhost, " -e "s, 2248000,1048000," node_base.xml   > /etc/libvirt/qemu/vmhost.xml
+virsh definne  /etc/libvirt/qemu/vmhost.xml
+virsh start vmhost
+
+变量替换
+#!/bin/bash
+cd /var/lib/libvirt/imges/
+qemu -img create -f qcow2 -b cirros.qcow2  ${1}.img 20G
+sed -e "s,node_base,${1}, " -e 's, 2248000,1048000,' node_base.xml   > /etc/libvirt/qemu/${1}.xml
+virsh definne  /etc/libvirt/qemu/${1}.xml
+virsh start ${1}
+:wq
+
+./vm  haha
+
+
+
+
+
+
+申请 SSL 证书
+
+安装 Acme 脚本 :   curl https://get.acme.sh | sh
+
+80 端口空闲的证书申请方式
+自行更换代码中的域名、邮箱为你解析的域名及邮箱
+~/.acme.sh/acme.sh --register-account -m xxxx@xxxx.com
+~/.acme.sh/acme.sh  --issue -d mydomain.com   --standalone
+
+安装证书到指定文件夹
+自行更换代码中的域名为你解析的域名
+~/.acme.sh/acme.sh --installcert -d mydomain.com --key-file /root/private.key --fullchain-file /root/cert.crt
+
+
+
